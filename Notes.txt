@@ -1,0 +1,74 @@
+- Question d'intro à Claude
+- Schéma pour comprendre le sujet : réflexion sur les paramètres : vaut mieux prendre (alpha, x) ou (alpha, y) ou (x,y) ? --> Plutôt (alpha, y) car deuxième cap (après virement) est forcément une droite passant par (x,y) et par (0,5000) + car on a besoin de y pour savoir si le virement est dans la partie vent fort ou vent modéré
+- Réflexion sur solutions impossible : alpha <20 ou vitesse nulle OU vitesse trop faible (= tps max de simulation)
+
+
+------------------------------------
+- Vérification Claude
+- Liste des solutions impossibles à pénaliser
+- On se concentre sur le bord tribord (symétrie du pb) pour le choix de l'angle de départ
+
+
+
+Code avec des phrases : 
+- Constantes et paramètres du problème : initialiser, définir
+* N : population initiale --> grand car calculer pas trop gourmand donc on peut se le permettre
+* S : pourcentage de sélection de la population : à déterminer
+* Plage de choix de alpha ]20;90[
+* Critère de fin du programme (à déterminer : quand la progression entre deux itérations est de moins de x secondes, par exemples)
+
+
+Fonctions : 
+- choix_y(alpha) : Qui détermine l'intervalle des y possibles en fonction des alpha1 (qui évitent que alpha2 soit <20°) avant même de faire entrer des couples (alpha1,y) dans N
+
+------------------------------
+
+- Demande de retour à Claude : globalement OK mais point à changer : 
+Le critère d’arrêt « progression < x s entre deux itérations » est risqué. Un algorithme génétique peut stagner quelques générations puis repartir. Préférez : pas d’amélioration du meilleur individu pendant k générations (par exemple k = 20) ;
+
+Ajout d'une fonction ConditionArret()
+Il nous manque le choix du type de croisement : Comment faire un enfant ?
+Ajout d'une fonction FaireUnEnfant(parent1, parent2)-> indiv:. Choix du type de croisement : Claude propose m pondérée, demande de vérif (gaussienne ?)
+
+ Nouvelles choses à prendre en compte:
+"Le croisement. Comment fabriquer un enfant à partir de deux parents (α₁, y₁) et (α₂, y₂) ? Par exemple, une moyenne pondérée aléatoire : enfant = t·parent1 + (1 − t)·parent2, avec t tiré au hasard dans [0, 1].
+
+La mutation. Avec quel taux, et avec quelle amplitude ? Par exemple, un petit bruit gaussien ajouté à α et à y.
+
+L’élitisme. Garder le meilleur individu tel quel d’une génération à l’autre, pour ne jamais le perdre.
+
+La gestion des enfants invalides. C’est le point clé. choix_y garantit une population initiale faisable, mais un croisement ou une mutation peut produire un enfant qui viole la contrainte. Par exemple, si α augmente, y_min diminue, mais si α diminue, y peut passer sous y_min. Il faut choisir :
+
+soit réparer l’enfant, en ramenant y dans [y_min(α), 5000[ ;
+soit le pénaliser, ce qui rejoint votre ligne « liste des solutions impossibles à pénaliser »."
+
+Ajoute bruit gaussien à FaireUnEnfant()
+Pour gérer les enfants invalides --> on pénalise
+
+On ajoute l'elitisme : remettre automatiquement le meilleur dans la génération suivante 
+
+Ajout FonctionCout() : temps total (calculée pour chaque individu, méthode de la classe individu)
+
+----------------------------------
+PROMPT : "Est-ce que la moyenne pondérée pour concevoir l'enfant c'est le plus optimal ? 
+Ou est-ce que ça serait une bonne idée de faire avec une fonction gaussienne (un enfant est créé par un seul parent mais avec les paramètres qui sont gaussiens centrés sur le parent) ?"
+
+Conclusion : un croisement entre deux parents, en BLX ;
+puis une mutation gaussienne sur l’enfant, avec une certaine probabilité.
+Deux points pratiques :
+Prenez un σ différent pour chaque paramètre, parce que les échelles n’ont rien à voir : un ordre de grandeur de quelques degrés pour α, et d’environ 100 m pour y.
+Faites décroître σ au fil des générations : on explore large au début, puis on affine à la fin.
+
+---------------------------------
+Ce qui n'est pas encore tranché : 
+- Sigma de départ : on commence à 1° pour alpha et 10 m pour y, et on tatonnera quand on aura le code. Décroissance de sigma x 0,95 à chaque génération
+- Elitisme : on en garde un seul, pas quelques uns, car le but c'ets d'avoir le meilleur à chaque fois et le concept de l'algo génère deja les quelques uns en question
+
+
+
+
+
+
+
+
+
